@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { LineChart } from 'react-native-chart-kit';
-import DropDownPicker from "react-native-dropdown-picker";
+import DropDownPicker from 'react-native-dropdown-picker';
 import baseURL from '../../assets/common/baseUrl';
 
 const AdminDashboard = ({ navigation }) => {
@@ -11,38 +10,49 @@ const AdminDashboard = ({ navigation }) => {
   const [selectedBranch, setSelectedBranch] = useState('');
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([
-    { label: "Both", value: "" },
-    { label: "Dormitory", value: "Dormitory" },
-    { label: "Hostel", value: "Hostel" },
+    { label: 'Both', value: '' },
+    { label: 'Dormitory', value: 'Dormitory' },
+    { label: 'Hostel', value: 'Hostel' },
   ]);
 
   const getAuthToken = async () => {
-    return AsyncStorage.getItem('token');
+    try {
+      const token = await AsyncStorage.getItem('token');
+      return token;
+    } catch (error) {
+      console.error('Error retrieving the token', error);
+      Alert.alert('Error', 'Failed to retrieve authentication token.');
+      return null;
+    }
   };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = await getAuthToken();
+     
         const response = await axios.get(`${baseURL}/getDashboardData`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
           params: { branch: selectedBranch },
         });
-    
+
         if (response.status === 200) {
-          const data = response.data;
-          setDashboardData(data);
+          console.log('Dashboard data fetched successfully:', response.data);
+          setDashboardData(response.data);
         } else {
           console.error('Error fetching dashboard data:', response);
+          Alert.alert('Error', 'Failed to fetch dashboard data.');
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        Alert.alert('Error', `Failed to fetch dashboard data: ${error.message}`);
       }
     };
+
     fetchData();
-  }, [selectedBranch]); 
+  }, [selectedBranch]);
 
   const quickStats = [
     { title: 'Total Residents', value: dashboardData?.totalResidents, targetScreen: 'Resident Chart' },
@@ -62,6 +72,25 @@ const AdminDashboard = ({ navigation }) => {
     navigation.navigate(targetScreen);
   };
 
+  axios.interceptors.request.use(request => {
+    console.log('Starting Request', request);
+    return request;
+  }, error => {
+    console.log('Request Error:', error);
+    return Promise.reject(error);
+  });
+  
+  axios.interceptors.response.use(
+    response => {
+      console.log('Response:', response);
+      return response;
+    },
+    error => {
+      console.log('Response Error:', error);
+      return Promise.reject(error);
+    }
+  );
+  
   return (
     <ScrollView style={styles.container}>
       <View style={styles.pickerContainer}>
@@ -96,8 +125,6 @@ const AdminDashboard = ({ navigation }) => {
           ))}
         </View>
       </View>
-
-   
     </ScrollView>
   );
 };
@@ -105,7 +132,7 @@ const AdminDashboard = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black', 
+    backgroundColor: 'black',
   },
   pickerContainer: {
     marginHorizontal: 20,
@@ -139,7 +166,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    alignItems: 'center', 
+    alignItems: 'center',
   },
   cardTitle: {
     fontSize: 16,

@@ -411,22 +411,22 @@ const styles = StyleSheet.create({
   },
   addButtonContainer: {
     position: 'absolute',
-    bottom: 16, // Adjust the bottom distance as needed
-    right: 16, // Adjust the right distance as needed
+    bottom: 16,
+    right: 16, 
   },
 
   addButton: {
     backgroundColor: 'blue',
-    borderRadius: 50, // Make it a circle by setting borderRadius to half of the width and height
-    width: 50, // Adjust the width as needed
-    height: 50, // Adjust the height as needed
+    borderRadius: 50, 
+    width: 50, 
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   addButtonLabel: {
     color: 'white',
-    fontSize: 24, // Adjust the font size as needed
+    fontSize: 24,
     fontWeight: 'bold',
   },
 

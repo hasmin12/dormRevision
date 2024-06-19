@@ -19,7 +19,7 @@ import { Platform } from 'react-native'
 // }
 
 // let url = 'http://dormxtend.online';
-let url = 'http://192.168.100.18:8000';
+let url = 'http://192.168.184.133:8000';
 
 
 export default url;

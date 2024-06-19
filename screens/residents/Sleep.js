@@ -77,22 +77,30 @@ const Sleep = () => {
     }
   };
 
-  const handleBarCodeScanned = async () => {
-    setScanned(true);
+  const handleBarCodeScanned = async ({ type, data }) => {
+    console.log(data);
+    setScanning(false);
+
+    if (data === 'DormSleep') {
     try {
       const token = await AsyncStorage.getItem('token');
+      
       const response = await axios.get(`${baseURL}/sendSleep`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       fetchLogs();
-      setShowScanner(false);
       alert('Data sent to backend successfully!');
     } catch (error) {
       console.error('Error sending data to backend:', error);
       alert('Error sending data to backend');
     }
+  } else {
+    setShowScanner(true);
+
+    alert('Invalid QR code scanned');
+  }
   };
 
   if (hasPermission === null) {

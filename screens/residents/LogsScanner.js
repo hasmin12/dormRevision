@@ -68,18 +68,22 @@ export default function LogsScanner() {
     if (!scanningOutsideModal) return; 
     setScanningOutsideModal(false);
 
-    if (data === 'http://192.168.100.18:8000/api/sendLogs') {
+    if (data === 'DormLeave') {
     
         const token = await getAuthToken();
-    
+        const response1 = await axios.get(`${url}/csrf-token`);
+        const csrfToken = response1.data.csrf_token;
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            withCredentials: true,
+        };
           const response = await axios.post(
             `${baseURL}/sendLogs`,
             { id: id }, 
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
+             config
           );
           fetchLogs();
       setId('');
@@ -92,9 +96,18 @@ export default function LogsScanner() {
     if (!scanning) return; 
     setScanning(false);
 
-    if (data === 'http://192.168.100.18:8000/api/sendLogs') {
+    if (data === 'DormLeave') {
       try {
         const token = await getAuthToken();
+        const response1 = await axios.get(`${url}/csrf-token`);
+        const csrfToken = response1.data.csrf_token;
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            withCredentials: true,
+        };
        
           const formData = new FormData();
           const formatDate = format(returnDate, 'yyyy-MM-dd');
@@ -106,12 +119,7 @@ export default function LogsScanner() {
             uri: gatePass,
           });
 
-          const response = await axios.post(`${baseURL}/sendLogs`, formData, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          const response = await axios.post(`${baseURL}/sendLogs`, formData, config);
       
 
         Toast.show({

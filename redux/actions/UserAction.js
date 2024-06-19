@@ -122,6 +122,7 @@ export const loginDorm = (email, password) => async (dispatch) => {
       };
 
       const response = await axios.post(`${url}/signin`, { email, password }, config);
+      console.log(`${url}/signin`);
       console.log(response.data.user);
 
       await AsyncStorage.setItem('token', response.data.token);

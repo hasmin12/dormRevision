@@ -1,108 +1,123 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, Button, FlatList,TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, Button, FlatList, TextInput } from 'react-native';
 import axios from 'axios';
 import baseURL from '../../assets/common/baseUrl';
 import url from '../../assets/common/url';
 import { useNavigation } from '@react-navigation/native';
-import StarRating from '../components/StarRating';
 import { Calendar } from 'react-native-calendars';
+
 const HostelRooms = () => {
   const navigation = useNavigation();
   const [hostelRooms, setHostelRooms] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [filterVisible, setFilterVisible] = useState(false);
 
-  const [startdisplayDate, setStartDisplayDate] = useState(null);
-  const [enddisplayDate, setEndDisplayDate] = useState(null);
+  const [startDisplayDate, setStartDisplayDate] = useState(null);
+  const [endDisplayDate, setEndDisplayDate] = useState(null);
+  const [searchText, setSearchText] = useState('');
+
+  const [wifi, setWifi] = useState(false);
+  const [tvWithCable, setTvWithCable] = useState(false);
+  const [kitchen, setKitchen] = useState(false);
+  const [refrigerator, setRefrigerator] = useState(false);
+  const [airConditioning, setAirConditioning] = useState(false);
+  const [hotShower, setHotShower] = useState(false);
+  const [hairDryer, setHairDryer] = useState(false);
+  const [kettle, setKettle] = useState(false);
+  console.log(`${baseURL}/getHostelrooms`)
+
   const fetchHostelRooms = async () => {
     try {
-      const response = await axios.post(`${baseURL}/getHostelrooms`);
-      
+      const response = await axios.get(`${baseURL}/getHostelrooms`);
       setHostelRooms(response.data);
-      
     } catch (error) {
       console.error('Error fetching hostel rooms:', error);
     }
   };
 
   useEffect(() => {
-  
     fetchHostelRooms();
-}, []);
-  const [searchText, setSearchText] = useState('');
+  }, []);
 
   const handleSearch = (text) => {
     setSearchText(text);
-  }
+  };
 
-//   const filteredData = hostelRooms.filter((room) => {
-//     // Check if the room's reservations conflict with the selected date range
-//     const conflictingReservation = room.reservations.find(reservation => {
-//         return reservation.checkin_date <= endDate && reservation.checkout_date >= startDate;
-//     });
+  const filteredData = hostelRooms.filter((room) => {
+    const conflictingReservation = room.reservations.find(reservation => {
+      if (!startDate || !endDate) return false;
+      return reservation.checkin_date <= endDate && reservation.checkout_date >= startDate;
+    });
+  
+    const matchesAmenities = (
+      (!wifi || room.wifi === 1) &&
+      (!tvWithCable || room.tv_with_cable === 1) &&
+      (!kitchen || room.kitchen === 1) &&
+      (!refrigerator || room.refrigerator === 1) &&
+      (!airConditioning || room.air_conditioning === 1) &&
+      (!hotShower || room.hot_shower === 1) &&
+      (!hairDryer || room.hair_dryer === 1) &&
+      (!kettle || room.kettle === 1)
+    );
+  
+    return (
+      !conflictingReservation &&
+      matchesAmenities &&
+      room.bedtype.toLowerCase().includes(searchText.toLowerCase())
+    );
+  });
 
-//     // If there is no conflicting reservation and the bed type matches the search text, include the room
-//     return !conflictingReservation && room.bedtype.toLowerCase().includes(searchText.toLowerCase());
-// });
+  const renderItem = ({ item }) => {
+    const conflictingReservation = item.reservations.find(
+      reservation =>
+        reservation.checkin_date <= endDate &&
+        reservation.checkout_date >= startDate
+    );
 
-const renderItem = ({ item }) => {
-  // Check if there are conflicting reservations for this room
-  const conflictingReservation = item.reservations.find(
-    reservation =>
-      reservation.checkin_date <= endDate &&
-      reservation.checkout_date >= startDate
-  );
+    const status = conflictingReservation ? 'Reserved' : 'Available';
 
-  // Determine the status of the room
-  const status = conflictingReservation ? 'Reserved' : 'Available';
-
-  return (
-    <TouchableOpacity
-      style={[styles.card, conflictingReservation && styles.reservedCard]}
-      onPress={() => {
-        // Only navigate if the room is available
-        if (!conflictingReservation) {
-          navigateToRoomDetails(item);
-        }
-      }}
-      disabled={!!conflictingReservation} 
-    >
-      <Image source={{ uri: `${url}${item.img_path}` }} style={styles.image} />
-      <View style={styles.cardBody}>
-        <Text style={styles.price}>₱{item.price}/day</Text>
-        <Text style={styles.address}>{item.name}</Text>
-        <Text style={styles.address}>{item.pax} Pax</Text>
-      </View>
-      <View style={styles.cardFooter}>
-        <Text style={styles.beds}>{item.bedtype} bed</Text>
-        <Text style={styles.status}>{status}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-};
+    return (
+      <TouchableOpacity
+        style={[styles.card, conflictingReservation && styles.reservedCard]}
+        onPress={() => {
+          if (!conflictingReservation) {
+            navigateToRoomDetails(item);
+          }
+        }}
+        disabled={!!conflictingReservation}
+      >
+        <Image source={{ uri: `${url}${item.img_path}` }} style={styles.image} />
+        <View style={styles.cardBody}>
+          <Text style={styles.price}>₱{item.price}/day</Text>
+          <Text style={styles.address}>{item.name}</Text>
+          <Text style={styles.address}>{item.pax} Pax</Text>
+        </View>
+        <View style={styles.cardFooter}>
+          <Text style={styles.beds}>{item.bedtype} bed</Text>
+          <Text style={styles.status}>{status}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const navigateToRoomDetails = (room) => {
     navigation.navigate('HostelRoomDetails', { room });
   };
-  const getRatingText = (rating) => {
-    if (rating >= 4.5) {
-      return 'Excellent';
-    } else if (rating >= 4.0) {
-      return 'Very Good';
-    } else if (rating >= 3.5) {
-      return 'Good';
-    } else if (rating >= 3.0) {
-      return 'Fair';
-    } else {
-      return 'Poor';
-    }
+
+  const openCalendar = () => {
+    setStartDate(null);
+    setModalVisible(true);
   };
 
-  const openCalendar = () =>{
-    setStartDate(null)
-    setModalVisible(true)
-  }
+  const openFilter = () => {
+    setFilterVisible(true);
+  };
+
+  const closeFilter = () => {
+    setFilterVisible(false);
+  };
 
   const getDatesInRange = (start, end) => {
     const dates = {};
@@ -115,59 +130,58 @@ const renderItem = ({ item }) => {
     return dates;
   };
 
-
   return (
     <View style={styles.container}>
       <View style={styles.searchInputContainer}>
-          <Button title="Open Calendar" onPress={openCalendar} />
+        <Button title="Open Calendar" onPress={openCalendar} />
       </View>
-       <Modal
+      <View style={styles.searchInputContainer}>
+        <Button title="Filter" onPress={openFilter} />
+      </View>
+      <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => {
           setModalVisible(false);
-          setStartDate(null); 
+          setStartDate(null);
         }}
       >
-         <View style={styles.popupOverlay}>
+        <View style={styles.popupOverlay}>
           <View style={styles.popup}>
             <View style={styles.popupContent}>
               <View style={styles.modalInfo}>
-                  <Calendar
-                    markingType='period'
-                    markedDates={{
-                      [startdisplayDate]: { startingDay: true, color: 'green' },
-                      [enddisplayDate]: { endingDay: true, color: 'green' },
-                      ...getDatesInRange(new Date(startdisplayDate), new Date(enddisplayDate))
-                    }}
-                    onDayPress={(day) => {
-                      if (!startDate || (endDate && new Date(day.dateString) < new Date(startDate))) {
-                        setStartDate(day.dateString);
-                        setStartDisplayDate(day.dateString);
-                        setEndDate(null); // Reset endDate
-                        setEndDisplayDate(null);
-                      } else if (!endDate && new Date(day.dateString) >= new Date(startDate)) {
-                        setEndDate(day.dateString);
-                        setEndDisplayDate(day.dateString);
-                        setModalVisible(false)
-                      }
-                    }}
-                  />
+                <Calendar
+                  markingType='period'
+                  markedDates={{
+                    [startDisplayDate]: { startingDay: true, color: 'green' },
+                    [endDisplayDate]: { endingDay: true, color: 'green' },
+                    ...getDatesInRange(new Date(startDisplayDate), new Date(endDisplayDate))
+                  }}
+                  onDayPress={(day) => {
+                    if (!startDate || (endDate && new Date(day.dateString) < new Date(startDate))) {
+                      setStartDate(day.dateString);
+                      setStartDisplayDate(day.dateString);
+                      setEndDate(null);
+                      setEndDisplayDate(null);
+                    } else if (!endDate && new Date(day.dateString) >= new Date(startDate)) {
+                      setEndDate(day.dateString);
+                      setEndDisplayDate(day.dateString);
+                      setModalVisible(false);
+                    }
+                  }}
+                />
+              </View>
             </View>
-            </View>
-
             <View style={styles.popupButtons}>
               <TouchableOpacity
                 onPress={() => {
-                  setModalVisible(false)
+                  setModalVisible(false);
                 }}
                 style={styles.btnClose}>
                 <Text style={styles.txtClose}>Close</Text>
               </TouchableOpacity>
             </View>
-
-
           </View>
         </View>
       </Modal>
@@ -179,316 +193,218 @@ const renderItem = ({ item }) => {
           value={searchText}
         />
       </View>
+      <Modal
+                animationType="slide"
+                transparent={true}
+                visible={filterVisible}
+                onRequestClose={() => {
+                    setFilterVisible(false);
+                }}
+            >
+              <View style={styles.popupOverlay}>
+          <View style={styles.popup}>
+            <View style={styles.popupContent}>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={() => setWifi(!wifi)} style={[styles.checkbox, wifi && styles.checked]}>
+            {wifi && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.checkboxLabel}>Wifi</Text>
+        </View>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={() => setTvWithCable(!tvWithCable)} style={[styles.checkbox, tvWithCable && styles.checked]}>
+            {tvWithCable && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.checkboxLabel}>TV with Cable</Text>
+        </View>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={() => setKitchen(!kitchen)} style={[styles.checkbox, kitchen && styles.checked]}>
+            {kitchen && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.checkboxLabel}>Kitchen</Text>
+        </View>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={() => setRefrigerator(!refrigerator)} style={[styles.checkbox, refrigerator && styles.checked]}>
+            {refrigerator && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.checkboxLabel}>Refrigerator</Text>
+        </View>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={() => setAirConditioning(!airConditioning)} style={[styles.checkbox, airConditioning && styles.checked]}>
+            {airConditioning && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.checkboxLabel}>Air Conditioning</Text>
+        </View>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={() => setHotShower(!hotShower)} style={[styles.checkbox, hotShower && styles.checked]}>
+            {hotShower && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.checkboxLabel}>Hot Shower</Text>
+        </View>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={() => setHairDryer(!hairDryer)} style={[styles.checkbox, hairDryer && styles.checked]}>
+            {hairDryer && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.checkboxLabel}>Hair Dryer</Text>
+        </View>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity onPress={() => setKettle(!kettle)} style={[styles.checkbox, kettle && styles.checked]}>
+            {kettle && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.checkboxLabel}>Kettle</Text>
+        </View>
+      </View>
+      <Button title="Close" onPress={closeFilter} />
+      
+      </View>
+      </View>
+            </Modal>
+      
       <FlatList
-        contentContainerStyle={styles.propertyListContainer}
-        data={hostelRooms}
+        data={filteredData}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={styles.propertyListContainer}
       />
     </View>
   );
 };
 
-export const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingTop:20,
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 20,
+    backgroundColor: '#f8f8f8'
+  },
+  searchInputContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#dcdcdc',
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 10,
+  },
+  checkboxContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderColor: '#dcdcdc',
+    borderRadius: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checked: {
+    backgroundColor: '#ffa500',
+  },
+  checkmark: {
+    color: 'white',
+    fontSize: 14,
+  },
+  checkboxLabel: {
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  propertyListContainer: {
+    paddingHorizontal: 20,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    centerContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingTop:20,
-    },
-    searchInputContainer:{
-      paddingHorizontal:20,
-    },
-    searchInput: {
-      height: 40,
-      borderWidth: 1,
-      borderColor:'#dcdcdc',
-      backgroundColor:'#fff',
-      borderRadius: 5,
-      padding: 10,
-      marginBottom: 10
-    },
-    propertyListContainer:{
-      paddingHorizontal:20,
-    },
-    card: {
-      backgroundColor: '#fff',
-      borderRadius: 5,
-      marginTop:10,
-      marginBottom: 10,
-      shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 2
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-      elevation: 5
-    },
-    image: {
-      height: 100,
-      width: 321,
-      marginBottom: 10,
-      borderRadius:5,
-    },
-    cardBody: {
-      marginBottom: 10,
-      padding: 10,
-    },
-    price: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 5
-    },
-    address: {
-      fontSize: 16,
-      marginBottom: 5
-    },
-    squareMeters: {
-      fontSize: 14,
-      marginBottom: 5,
-      color: '#666'
-    },
-    cardFooter: {
-      padding: 10,
-      flexDirection: 'row',
-      borderTopWidth:1,
-      borderTopColor:'#dcdcdc',
-      justifyContent: 'space-between',
-    },
-    beds: {
-      fontSize: 14,
-      color:'#ffa500',
-      fontWeight: 'bold'
-    },
-    baths: {
-      fontSize: 14,
-      color:'#ffa500',
-      fontWeight: 'bold'
-    },
-    parking: {
-      fontSize: 14,
-      color:'#ffa500',
-      fontWeight: 'bold'
-    },
-    header: {
-      backgroundColor: '#00CED1',
-      height: 200,
-    },
-    headerContent: {
-      padding: 30,
-      alignItems: 'center',
-      flex: 1,
-    },
-    detailContent: {
-      top: 80,
-      height: 500,
-      marginHorizontal: 30,
-      flexDirection: 'row',
-      position: 'absolute',
-      backgroundColor: '#ffffff',
-    },
-    userList: {
-      flex: 1,
-    },
-    cardContent: {
-      marginLeft: 20,
-      marginTop: 10,
-    },
-    
-    name: {
-      fontSize: 18,
-      flex: 1,
-      alignSelf: 'center',
-      color: '#008080',
-      fontWeight: 'bold',
-    },
-    position: {
-      fontSize: 14,
-      flex: 1,
-      alignSelf: 'center',
-      color: '#696969',
-    },
-    about: {
-      marginHorizontal: 10,
-    },
-  
-    followButton: {
-      marginTop: 10,
-      height: 35,
-      width: 100,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 30,
-      backgroundColor: '#00BFFF',
-    },
-    followButtonText: {
-      color: '#FFFFFF',
-      fontSize: 20,
-    },
-    /************ modals ************/
-    popup: {
-      backgroundColor: 'white',
-      marginTop: 80,
-      marginHorizontal: 20,
-      borderRadius: 7,
-    },
-    popupOverlay: {
-      backgroundColor: '#00000057',
-      flex: 1,
-      marginTop: 30,
-    },
-    popupContent: {
-      //alignItems: 'center',
-      margin: 5,
-      height: 400,
-    },
-    popupHeader: {
-      marginBottom: 45,
-    },
-    popupButtons: {
-      marginTop: 15,
-      flexDirection: 'row',
-      borderTopWidth: 1,
-      borderColor: '#eee',
-      justifyContent: 'center',
-    },
-    popupButton: {
-      flex: 1,
-      marginVertical: 16,
-    },
-    btnClose: {
-      flex:1,
-      height: 40,
-      backgroundColor: '#20b2aa',
-      padding:5,
-      alignItems:'center',
-      justifyContent:'center',
-    },
-    modalInfo: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    txtClose:{
-      color:'white'
-    },
-    inputContainer: {
-      borderBottomColor: '#F5FCFF',
-      backgroundColor: '#FFFFFF',
-      borderRadius: 30,
-      borderBottomWidth: 1,
-      width: 250,
-      height: 45,
-      marginBottom: 15,
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    inputs: {
-      height: 45,
-      marginLeft: 16,
-      borderBottomColor: '#FFFFFF',
-      flex: 1,
-    },
-    icon: {
-      width: 30,
-      height: 30,
-    },
-    inputIcon: {
-      marginLeft: 15,
-      justifyContent: 'center',
-    },
-    buttonContainer: {
-      height: 45,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 20,
-      width: 250,
-      borderRadius: 30,
-    },
-    loginButton: {
-      backgroundColor: '#3498db',
-    },
-    fabookButton: {
-      backgroundColor: '#3b5998',
-    },
-    googleButton: {
-      backgroundColor: '#ff0000',
-    },
-    loginText: {
-      color: 'white',
-    },
-    restoreButtonContainer: {
-      width: 250,
-      marginBottom: 15,
-      alignItems: 'flex-end',
-    },
-    socialButtonContent: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    socialIcon: {
-      color: '#FFFFFF',
-      marginRight: 5,
-    },
-    imageProfile: {
-      width: 100,
-      height: 100,
-    },
-    box: {
-      padding: 20,
-      marginTop: 5,
-      marginBottom: 5,
-      backgroundColor: 'white',
-      flexDirection: 'row',
-    },
-    boxContent: {
-      flex: 1,
-      flexDirection: 'column',
-      alignItems: 'flex-start',
-      marginLeft: 10,
-    },
-    title: {
-      fontSize: 18,
-      color: '#151515',
-    },
-    description: {
-      fontSize: 15,
-      color: '#646464',
-    },
-    buttons: {
-      flexDirection: 'row',
-    },
-    button: {
-      height: 35,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 10,
-      width: 50,
-      marginRight: 5,
-      marginTop: 5,
-    },
-    iconButton: {
-      width: 20,
-      height: 20,
-    },
-    view: {
-      backgroundColor: '#eee',
-    },
-    profile: {
-      backgroundColor: '#1E90FF',
-    },
-    message: {
-      backgroundColor: '#228B22',
-    },
-  });
-
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  reservedCard: {
+    backgroundColor: '#d3d3d3',
+  },
+  image: {
+    height: 150,
+    width: '100%',
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+  },
+  cardBody: {
+    padding: 10,
+  },
+  price: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  address: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  cardFooter: {
+    padding: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#dcdcdc',
+  },
+  beds: {
+    fontSize: 14,
+    color: '#ffa500',
+    fontWeight: 'bold',
+  },
+  status: {
+    fontSize: 14,
+    color: '#ffa500',
+    fontWeight: 'bold',
+  },
+  popupOverlay: {
+    backgroundColor: '#00000057',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  popup: {
+    backgroundColor: 'white',
+    width: '80%',
+    borderRadius: 7,
+    overflow: 'hidden',
+  },
+  popupContent: {
+    padding: 20,
+  },
+  modalInfo: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  popupButtons: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderColor: '#eee',
+    justifyContent: 'center',
+  },
+  btnClose: {
+    flex: 1,
+    height: 40,
+    backgroundColor: '#20b2aa',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  txtClose: {
+    color: 'white',
+  },
+});
 
 export default HostelRooms;

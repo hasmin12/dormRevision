@@ -18,10 +18,7 @@ const Equipment = ({ route }) => {
     const [equipmentList, setEquipmentList] = useState([
         { id: 1, name: 'Laptop', isChecked: user.laptop === 1 ? true : false },
         { id: 2, name: 'ElectricFan', isChecked: user.electricfan === 1 ? true : false },
-        { id: 3, name: 'Printer', isChecked: false },
-        { id: 4, name: 'Internet Router', isChecked: false },
-        { id: 5, name: 'Desk Lamp', isChecked: false },
-        { id: 6, name: 'Telephone', isChecked: false },
+   
     ]);
 
     const getAuthToken = async () => {
@@ -128,7 +125,7 @@ const styles = StyleSheet.create({
         height: 30,
         borderWidth: 1,
         borderColor: '#000',
-        borderRadius: 15,
+        // borderRadius: 15,
         justifyContent: 'center',
         alignItems: 'center',
     },

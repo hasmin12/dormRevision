@@ -20,17 +20,19 @@ const Complaints = () => {
   const handleSubmit = async () => {
     try {
       const token = await getAuthToken();
+      const config = {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+        },
+        withCredentials: true,
+    };
   
       const formData = new FormData();
       formData.append('name', useName ? name : ''); 
       formData.append('complaint', complaint);
 
-      const response = await axios.post(`${baseURL}/createComplaint`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post(`${baseURL}/createComplaint`, formData, config);
   
       console.log('Complaint submitted successfully:', response.data);
   
