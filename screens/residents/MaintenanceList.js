@@ -28,13 +28,14 @@ const MaintenanceList = () => {
     const [type, setType] = useState("")
     const [description, setDescription] = useState("")
     // const [maintenancelists, setMaintenanceList] = useState([])
+    const user = useSelector((state) => state.auth.user);
 
     const getAuthToken = async () => {
         return AsyncStorage.getItem('token');
     };
 
     useEffect(() => {
-      dispatch(fetchMaintenances());
+      dispatch(fetchMaintenances(user.user.id));
       maintenancelist()
       
     }, [dispatch]);
@@ -136,7 +137,7 @@ const MaintenanceList = () => {
           });
           console.log(formData)
       
-          const response = await axios.post(`${baseURL}/resident/createMaintenance`, formData, {
+          const response = await axios.post(`${baseURL}/mobile/createMaintenance/${user.user.id}`, formData, {
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'multipart/form-data',
@@ -147,7 +148,8 @@ const MaintenanceList = () => {
       
           // Close the add modal and refresh the list of announcements
           handleAddModalClose();
-          dispatch(fetchMaintenances());
+      dispatch(fetchMaintenances(user.user.id));
+
           resetForm();
           // Optionally, you can show a success toast message
           Toast.show({

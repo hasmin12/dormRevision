@@ -25,6 +25,8 @@ import { Platform } from 'react-native'
 // }
 
 
-// let baseURL = 'http://dormxtend.online/api';
-let baseURL = 'http://192.168.184.133:8000/api'
+let baseURL = 'http://dormxtend.online/api';
+// let baseURL = 'http://192.168.184.133:8000/api'
+// let baseURL = 'http://192.168.100.18:8000/api'
+
 export default baseURL;

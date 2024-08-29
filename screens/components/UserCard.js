@@ -9,13 +9,12 @@ const UserCard = ({ user }) => {
   const handleCardPress = () => {
     navigation.navigate('Equipment');
   };
-
+  
   return (
-    <TouchableOpacity onPress={handleCardPress}> 
       <View style={styles.userCard}>
         <View style={styles.imageColumn}>
           <Image
-            source={{ uri: `${url}/${user.user.img_path}` }}
+            source={{ uri: `${url}${user.user.img_path}` }}
             style={styles.image}
             resizeMode="cover"
             onError={(error) => console.error('Image load error:', error)}
@@ -30,7 +29,6 @@ const UserCard = ({ user }) => {
           <Text>Contact: {user.user.contacts}</Text>
         </View>
       </View>
-    </TouchableOpacity>
   );
 };
 

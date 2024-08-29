@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 import {
   REGISTER_RESIDENT_REQUEST,
   REGISTER_RESIDENT_SUCCESS,
@@ -35,20 +36,17 @@ export const fetchPaymentHistoryFailure = (error) => ({
   type: FETCH_PAYMENT_HISTORY_FAILURE,
   payload: error,
 });
-const getAuthToken = async () => {
-  return AsyncStorage.getItem('token');
-};
-export const fetchPaymentHistory = () => {
+
+export const fetchPaymentHistory = (id) => {
   return async (dispatch) => {
     dispatch(fetchPaymentHistoryRequest());
     try {
-      const token = await getAuthToken();
-      const response = await axios.get(`${baseURL}/myPaymentHistory`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      console.log(`${baseURL}/myPaymentHistory/${id}`)
+      const response = await axios.get(`${baseURL}/myPaymentHistory/${id}`)
       dispatch(fetchPaymentHistorySuccess(response.data));
+      console.log("SS")
+      console.log(response.data)
+
     } catch (error) {
       console.error('Error fetching payment history:', error);
       dispatch(fetchPaymentHistoryFailure('Error fetching payment history'));
@@ -132,17 +130,13 @@ export const fetchMaintenanceFailure = (error) => ({
   payload: error,
 });
 
-export const fetchMaintenances = () => {
+export const fetchMaintenances = (id) => {
   return async (dispatch) => {
     dispatch(fetchMaintenanceRequest());
     try {
-      const token = await getAuthToken();
+      console.log(id)
 
-      const response = await axios.get(`${baseURL}/getMaintenances`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(`${baseURL}/mobile/getMaintenances/${id}`);
       
       console.log(response.data)
   
@@ -206,14 +200,9 @@ export const fetchAnnouncements = () => {
   return async (dispatch) => {
     dispatch(fetchAnnouncementRequest());
     try {
-      const token = await getAuthToken();
 
-      const response = await axios.get(`${baseURL}/getAnnouncements`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  // console.log(response.data)
+      const response = await axios.get(`${baseURL}/mobile/getAnnouncements`);
+  console.log(response.data)
       dispatch(fetchAnnouncementSuccess(response.data.announcements));
     } catch (error) {
       console.error('Error fetching myAnnouncements:', error);

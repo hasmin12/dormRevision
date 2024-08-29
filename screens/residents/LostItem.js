@@ -10,13 +10,8 @@ const LostItem = () => {
   useEffect(() => {
     const fetchLostItems = async () => {
       try {
-        const token = await getAuthToken();
 
-        const response = await axios.get(`${baseURL}/getLostitems`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axios.get(`${baseURL}/mobile/getLostitems`);
         setLostItems(response.data.lostitems);
       } catch (error) {
         console.error('Error fetching Lost Items:', error);

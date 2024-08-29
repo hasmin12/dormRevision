@@ -11,13 +11,13 @@ const Management = () => {
     const dispatch = useDispatch();
     const navigation = useNavigation();
 
-    const ViewProfile = () => {
-        navigation.navigate("Profile"); // Navigate to the Profile screen
-    };
+    // const ViewProfile = () => {
+    //     navigation.navigate("Profile"); // Navigate to the Profile screen
+    // };
 
-    const ViewSettings = () => {
-        navigation.navigate("Settings"); // Navigate to the Settings screen
-    };
+    // const ViewSettings = () => {
+    //     navigation.navigate("Settings"); // Navigate to the Settings screen
+    // };
 
     const ViewScanner = () => {
         navigation.navigate("Logs Scanner"); // Navigate to the Settings screen
@@ -56,13 +56,13 @@ const Management = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity onPress={ViewProfile} style={styles.card}>
+      {/* <TouchableOpacity onPress={ViewProfile} style={styles.card}>
         <Text>View Profile</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       
-      <TouchableOpacity onPress={ViewSettings} style={styles.card}>
+      {/* <TouchableOpacity onPress={ViewSettings} style={styles.card}>
         <Text>Settings</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <TouchableOpacity onPress={ViewScanner} style={styles.card}>
         <Text>LogsScanner</Text>

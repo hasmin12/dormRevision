@@ -9,11 +9,13 @@ import {
   Modal,
   CheckBox
 } from "react-native";
+import * as ImagePicker from 'expo-image-picker';
+
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
-import {launchImageLibrary} from 'react-native-image-picker';
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
 import format from "date-fns/format";
@@ -207,88 +209,91 @@ export default SignUpScreen = () => {
     return componentToRender;
   };
 
-  const pickAvatar = () => {
-    const options = {
-      title: 'Select Avatar',
-      storageOptions: {
-        skipBackup: true,
-        path: 'images',
-      },
-    };
-
-    
-      launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
-      } else {
-        const { uri } = response;
-        setAvatar(uri);
+  const pickAvatar = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+        return;
       }
-    });
+  
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+      const selectedUri = result.assets.length > 0 ? result.assets[0].uri : null;
+  
+      if (!result.cancelled) {
+        setAvatar(selectedUri);
+      }
+    } catch (error) {
+      console.error('Error picking gate pass:', error);
+    }
   };
-  const pickValidId = () => {
-    const options = {
-      title: 'Select Valid ID',
-      mediaType: 'photo',
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    };
-  
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled picking valid ID');
-      } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
-      } else {
-        const { uri } = response;
-        setValidId(uri);
+  const pickValidId = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+        return;
       }
-    });
-  };
   
-  const pickVaccineCard = () => {
-    const options = {
-      title: 'Select Vaccine Card',
-      mediaType: 'photo',
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    };
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+      const selectedUri = result.assets.length > 0 ? result.assets[0].uri : null;
   
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled picking vaccine card');
-      } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
-      } else {
-        const { uri } = response;
-        setVaccineCard(uri);
+      if (!result.cancelled) {
+        setValidId(selectedUri);
       }
-    });
+    } catch (error) {
+      console.error('Error picking gate pass:', error);
+    }
   };
   
-  const pickApplicationForm = () => {
-    const options = {
-      title: 'Select Application Form',
-      mediaType: 'photo',
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    };
-  
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled picking application form');
-      } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
-      } else {
-        const { uri } = response;
-        setApplicationForm(uri);
+  const pickVaccineCard = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+        return;
       }
-    });
+  
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+      const selectedUri = result.assets.length > 0 ? result.assets[0].uri : null;
+  
+      if (!result.cancelled) {
+        setVaccineCard(selectedUri);
+      }
+    } catch (error) {
+      console.error('Error picking gate pass:', error);
+    }
+  };
+  
+  const pickApplicationForm = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+        return;
+      }
+  
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+      const selectedUri = result.assets.length > 0 ? result.assets[0].uri : null;
+  
+      if (!result.cancelled) {
+        setValidId(selectedUri);
+      }
+    } catch (error) {
+      console.error('Error picking gate pass:', error);
+    }
   };
   
   const pickCor = async () => {
@@ -553,7 +558,7 @@ export default SignUpScreen = () => {
             />
             <TouchableOpacity
               style={styles.changeAvatarButton}
-              onPress={pickAvatar}
+              onPress={()=>{pickAvatar()}}
             >
               <Text style={styles.changeAvatarButtonText}>Choose Image</Text>
             </TouchableOpacity>
@@ -668,7 +673,7 @@ export default SignUpScreen = () => {
               />
             </View>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Year</Text>
+              <Text style={styles.label}>Birthdate</Text>
                 <TextInput
                     style={styles.input}
                     placeholder="Birthdate"

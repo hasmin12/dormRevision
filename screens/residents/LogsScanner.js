@@ -5,6 +5,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import axios from 'axios';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import baseURL from '../../assets/common/baseUrl';
+import url from '../../assets/common/url';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, Title, Paragraph } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
@@ -12,7 +13,11 @@ import Constants from 'expo-constants';
 import format from 'date-fns/format';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
+import { useSelector } from 'react-redux';
+
 export default function LogsScanner() {
+  const user = useSelector((state) => state.auth.user);
+
   const [hasPermission, setHasPermission] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scanningOutsideModal, setScanningOutsideModal] = useState(false); // New state
@@ -67,79 +72,86 @@ export default function LogsScanner() {
   const outsideBarCodeScanned = async ({ type, data }) => {
     if (!scanningOutsideModal) return; 
     setScanningOutsideModal(false);
-
-    if (data === 'DormLeave') {
-    
-        const token = await getAuthToken();
-        const response1 = await axios.get(`${url}/csrf-token`);
-        const csrfToken = response1.data.csrf_token;
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-            },
-            withCredentials: true,
-        };
-          const response = await axios.post(
-            `${baseURL}/sendLogs`,
-            { id: id }, 
-             config
-          );
-          fetchLogs();
-      setId('');
+    console.log(data);
+  
+    if (data === 'https://dormxtend.online/DormLeave') {
+      try {
+        const formData = new FormData();
+        formData.append("logId", id);
+  
+        const response = await axios.post(`${baseURL}/mobile/sendLogs/${user.user.id}`, formData, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data' // Do not set this manually
+          }
+        });
+        fetchLogs();
+        setId('');
+      } catch (error) {
+        console.error('Error sending data to backend:', error);
+        alert('Error sending data to backend. Check the console for more details.');
+      }
     } else {
       alert('Invalid QR code scanned');
     }
   };
-
+  
   const handleBarCodeScanned = async ({ type, data }) => {
-    if (!scanning) return; 
+    if (!scanning) return;
     setScanning(false);
-
-    if (data === 'DormLeave') {
+    console.log(data);
+  
+    if (data === 'https://dormxtend.online/DormLeave') {
       try {
-        const token = await getAuthToken();
-        const response1 = await axios.get(`${url}/csrf-token`);
-        const csrfToken = response1.data.csrf_token;
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-            },
-            withCredentials: true,
-        };
-       
-          const formData = new FormData();
-          const formatDate = format(returnDate, 'yyyy-MM-dd');
-          formData.append("purpose", purpose);
-          formData.append("expectedReturn", formatDate);
-          formData.append("gatePass", {
-            name: "gatePass.jpg",
-            type: "image/jpeg",
-            uri: gatePass,
-          });
-
-          const response = await axios.post(`${baseURL}/sendLogs`, formData, config);
-      
-
+        const formData = new FormData();
+        const formatDate = format(returnDate, 'yyyy-MM-dd');
+        formData.append("purpose", purpose);
+        formData.append("expectedReturn", formatDate);
+        formData.append("gatePass", {
+          name: "gatePass.jpg",
+          type: "image/jpeg",
+          uri: gatePass,
+        });
+  
+        // No need to manually set Content-Type; Axios handles it
+        const response = await axios.post(`${baseURL}/mobile/sendLogs/${user.user.id}`, formData, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data' // Do not set this manually
+          }
+        });
+  
         Toast.show({
           type: 'success',
           text1: 'Success',
           text2: 'Data sent to the backend successfully!',
         });
-        setIsModalVisible(false)
-        setPurpose('')
-        setGatepass('')
+        setIsModalVisible(false);
+        setPurpose('');
+        setGatepass('');
         fetchLogs(); // Fetch logs after sending data
       } catch (error) {
-        console.error('Error sending data to backend:', error);
+        if (error.response) {
+          // Server responded with a status other than 2xx
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+        } else if (error.request) {
+          // No response received
+          console.error('Request data:', error.request);
+        } else {
+          // Other errors
+          console.error('Error message:', error.message);
+        }
+        console.error('Error config:', error.config);
         alert('Failed to send data to the backend.');
       }
-      
     } else {
       alert('Invalid QR code scanned');
     }
   };
+  
+  
 
 
   const pickGatepass = async () => {

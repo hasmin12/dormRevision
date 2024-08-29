@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, Button, Modal, TextInput, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Button,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Platform,
+} from 'react-native';
 import Input from '../../shared/Form/Input';
 import Carousel from 'react-native-reanimated-carousel';
 import url from '../../assets/common/url';
 import format from 'date-fns/format';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { launchImageLibrary } from 'react-native-image-picker';
-
 import { Calendar } from 'react-native-calendars';
-import Entypo from '@expo/vector-icons/Entypo';
 import axios from 'axios';
 import baseURL from '../../assets/common/baseUrl';
 import StarRating from '../components/StarRating';
+import * as ImagePicker from 'expo-image-picker';
 
 const HostelRoomDetails = ({ route }) => {
     const { room } = route.params;
@@ -38,7 +47,7 @@ const HostelRoomDetails = ({ route }) => {
 
     const fetchReservations = async () => {
         try {
-            const response = await axios.get(`${baseURL}/getReservations`);
+            const response = await axios.get(`${baseURL}/mobile/user/getReservations`);
             setReservations(response.data);
         } catch (error) {
             console.error('Error fetching reservations:', error);
@@ -88,10 +97,6 @@ const HostelRoomDetails = ({ route }) => {
         setModalVisible(true);
     };
 
-    const getAuthToken = async () => {
-        return AsyncStorage.getItem('token');
-    };
-
     const handleSubmit = async () => {
         const checkin_Date = format(checkinDate, 'yyyy-MM-dd');
         const checkout_Date = format(checkoutDate, 'yyyy-MM-dd');
@@ -124,21 +129,58 @@ const HostelRoomDetails = ({ route }) => {
         formData.append('downPayment', downPayment);
         formData.append('checkout_date', checkout_Date);
         formData.append('totalPayment', totalPayment);
-        console.log(formData);
-
+    
         try {
             const response = await axios.post(`${baseURL}/createReservation`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
+    
+            // Reset form data after successful submission
+            setName('');
+            setEmail('');
+            setPassword('');
+            setAddress('');
+            setSex('');
+            setPhone('');
+            setBirthdate(new Date());
+            setValidId(null);
+            setImage(null);
+            setReceipt(null);
+            setDownpayment('');
+            setCheckInDate(new Date());
+            setCheckOutDate(new Date());
+            setTotalPayment(0);
+    
+            // Close the modal
             setModalVisible(false);
+    
+            // Show success message
+            Toast.show({
+                topOffset: 60,
+                type: "success",
+                text1: "Reservation Submitted",
+            });
+    
         } catch (error) {
-            console.error('Error creating reservation:', error.response);
-            Alert.alert('Error', 'Failed to create reservation. Please try again later.');
+            // Log the complete error object
+            console.error('Error creating reservation:', error);
+    
+            // Handle specific error details if available
+            const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
+            Alert.alert('Error', errorMessage);
+    
+            // Show failure message using Toast (optional)
+            Toast.show({
+                topOffset: 60,
+                type: "error",
+                text1: errorMessage,
+            });
         }
     };
-
+    
+    
     const handleCheckinDateChange = (day) => {
         const selectedDate = new Date(day.dateString);
         setCheckInDate(selectedDate);
@@ -159,7 +201,7 @@ const HostelRoomDetails = ({ route }) => {
         const numberOfDays = Math.ceil((selectedDate - checkinDate) / millisecondsPerDay);
         const payment = numberOfDays * room.price;
         const downpay = payment / 2;
-        setTotalPayment(payment);
+        setTotalPayment(payment.toFixed(2));
         setDownpayment(downpay);
     };
 
@@ -171,45 +213,69 @@ const HostelRoomDetails = ({ route }) => {
     };
 
     const pickValidID = async () => {
-        const options = {
-            mediaType: 'photo',
-            maxWidth: 200,
-            maxHeight: 200,
-            quality: 1,
-        };
-        launchImageLibrary(options, (response) => {
-            if (!response.didCancel) {
-                setValidId(response.uri);
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              alert('Sorry, we need camera roll permissions to make this work!');
+              return;
             }
-        });
+        
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              quality: 1,
+            });
+            const selectedUri = result.assets.length > 0 ? result.assets[0].uri : null;
+        
+            if (!result.cancelled) {
+              setValidId(selectedUri);
+            }
+          } catch (error) {
+            console.error('Error picking valid ID:', error);
+          }
     };
 
     const pickReceipt = async () => {
-        const options = {
-            mediaType: 'photo',
-            maxWidth: 200,
-            maxHeight: 200,
-            quality: 1,
-        };
-        launchImageLibrary(options, (response) => {
-            if (!response.didCancel) {
-                setReceipt(response.uri);
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              alert('Sorry, we need camera roll permissions to make this work!');
+              return;
             }
-        });
+        
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              quality: 1,
+            });
+            const selectedUri = result.assets.length > 0 ? result.assets[0].uri : null;
+        
+            if (!result.cancelled) {
+              setReceipt(selectedUri);
+            }
+          } catch (error) {
+            console.error('Error picking receipt:', error);
+          }
     };
 
     const pickmyImage = async () => {
-        const options = {
-            mediaType: 'photo',
-            maxWidth: 200,
-            maxHeight: 200,
-            quality: 1,
-        };
-        launchImageLibrary(options, (response) => {
-            if (!response.didCancel) {
-                setImage(response.uri);
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+              alert('Sorry, we need camera roll permissions to make this work!');
+              return;
             }
-        });
+        
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              quality: 1,
+            });
+            const selectedUri = result.assets.length > 0 ? result.assets[0].uri : null;
+        
+            if (!result.cancelled) {
+              setImage(selectedUri);
+            }
+          } catch (error) {
+            console.error('Error picking image:', error);
+          }
     };
 
     const getDisabledDates = () => {
@@ -242,29 +308,29 @@ const HostelRoomDetails = ({ route }) => {
     const generateMarkedDates = () => {
         let marked = {};
         disabledDates.forEach(date => {
-            marked[date] = { disabled: true, disableTouchEvent: true, color: 'green' };
+            marked[date] = { disabled: true, disableTouchEvent: true, color: '#FF6F61' };
         });
         return marked;
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.roomName}>{room.name}</Text>
             <Text style={styles.roomDescription}>{room.description}</Text>
-            <Text style={styles.roomPrice}>Price per night: {room.price}</Text>
+            <Text style={styles.roomPrice}>Price per night: ${room.price.toFixed(2)}</Text>
 
             <View style={styles.carouselContainer}>
                 <Carousel
                     data={images}
                     renderItem={renderItem}
-                    sliderWidth={300}
-                    itemWidth={300}
+                    width={300}
                 />
             </View>
+            
 
             <View style={styles.checkinContainer}>
                 <Text style={styles.label}>Check-in Date:</Text>
-                <TouchableOpacity onPress={showCheckin}>
+                <TouchableOpacity onPress={showCheckin} style={styles.dateButton}>
                     <Text style={styles.dateText}>{format(checkinDate, 'MMMM dd, yyyy')}</Text>
                 </TouchableOpacity>
                 {checkinDatePicker && (
@@ -272,13 +338,19 @@ const HostelRoomDetails = ({ route }) => {
                         onDayPress={handleCheckinDateChange}
                         minDate={format(new Date(), 'yyyy-MM-dd')}
                         markedDates={generateMarkedDates()}
+                        theme={{
+                            todayTextColor: '#FF6F61',
+                            selectedDayBackgroundColor: '#FF6F61',
+                            selectedDayTextColor: '#FFFFFF',
+                            dayTextColor: '#333333',
+                        }}
                     />
                 )}
             </View>
 
             <View style={styles.checkoutContainer}>
                 <Text style={styles.label}>Check-out Date:</Text>
-                <TouchableOpacity onPress={showCheckout}>
+                <TouchableOpacity onPress={showCheckout} style={styles.dateButton}>
                     <Text style={styles.dateText}>{format(checkoutDate, 'MMMM dd, yyyy')}</Text>
                 </TouchableOpacity>
                 {checkoutDatePicker && (
@@ -286,19 +358,25 @@ const HostelRoomDetails = ({ route }) => {
                         onDayPress={handleCheckoutDateChange}
                         minDate={format(new Date(), 'yyyy-MM-dd')}
                         markedDates={generateMarkedDates()}
+                        theme={{
+                            todayTextColor: '#FF6F61',
+                            selectedDayBackgroundColor: '#FF6F61',
+                            selectedDayTextColor: '#FFFFFF',
+                            dayTextColor: '#333333',
+                        }}
                     />
                 )}
             </View>
 
-            <Text style={styles.totalPayment}>Total Payment: {totalPayment}</Text>
-            <Button title="Reserve Now" onPress={handleReservation} />
+            <Text style={styles.totalPayment}>Total Payment: ${totalPayment}</Text>
+            <Button title="Reserve Now" onPress={handleReservation} color="#FF6F61" />
 
             <Modal
                 visible={modalVisible}
                 animationType="slide"
                 onRequestClose={() => setModalVisible(false)}
             >
-                <ScrollView style={styles.modalContainer}>
+                <ScrollView contentContainerStyle={styles.modalContainer}>
                     <Text style={styles.modalTitle}>Complete Your Reservation</Text>
                     <Input
                         placeholder="Name"
@@ -330,6 +408,8 @@ const HostelRoomDetails = ({ route }) => {
                         placeholder="Phone"
                         value={phone}
                         onChangeText={setPhone}
+                keyboardType="numeric"
+
                     />
                     <TouchableOpacity onPress={() => setBirthdatePicker(true)}>
                         <Text style={styles.dateText}>Birthdate: {format(birthdate, 'MMMM dd, yyyy')}</Text>
@@ -338,52 +418,81 @@ const HostelRoomDetails = ({ route }) => {
                         <DateTimePicker
                             value={birthdate}
                             mode="date"
-                            display="default"
+                            display="spinner"
                             onChange={handleBirthDateChange}
+                            textColor="#FF6F61"
                         />
                     )}
-                    <TouchableOpacity onPress={pickValidID}>
-                        <Text style={styles.uploadText}>Upload Valid ID</Text>
+                    <TouchableOpacity
+                        onPress={pickValidID}
+                        style={[
+                            styles.uploadButton,
+                            validId ? styles.uploadButtonUploaded : null
+                        ]}
+                    >
+                        <Text style={styles.uploadText}>
+                            {validId ? 'Valid ID Uploaded' : 'Upload Valid ID'}
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={pickReceipt}>
-                        <Text style={styles.uploadText}>Upload Down Payment Receipt</Text>
+
+                    <TouchableOpacity
+                        onPress={pickReceipt}
+                        style={[
+                            styles.uploadButton,
+                            receipt ? styles.uploadButtonUploaded : null
+                        ]}
+                    >
+                        <Text style={styles.uploadText}>
+                            {receipt ? 'Receipt Uploaded' : 'Upload Down Payment Receipt'}
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={pickmyImage}>
-                        <Text style={styles.uploadText}>Upload Image</Text>
+
+                    <TouchableOpacity
+                        onPress={pickmyImage}
+                        style={[
+                            styles.uploadButton,
+                            image ? styles.uploadButtonUploaded : null
+                        ]}
+                    >
+                        <Text style={styles.uploadText}>
+                            {image ? 'Image Uploaded' : 'Upload Image'}
+                        </Text>
                     </TouchableOpacity>
-                    <Button title="Submit" onPress={handleSubmit} />
+
+                    <Button title="Submit" onPress={handleSubmit} color="#FF6F61" />
                 </ScrollView>
             </Modal>
-
-            <View style={styles.reviewsContainer}>
-                <Text style={styles.reviewsTitle}>Reviews</Text>
-                {renderReviews()}
-            </View>
         </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        padding: 20,
+        flexGrow: 1,
+        padding: 16,
+        backgroundColor: '#FAFAFA',
     },
     roomName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 10,
+        fontSize: 26,
+        fontWeight: '700',
+        color: '#333333',
+        marginBottom: 8,
     },
     roomDescription: {
-        fontSize: 16,
-        marginBottom: 10,
+        fontSize: 18,
+        color: '#555555',
+        marginBottom: 12,
     },
     roomPrice: {
-        fontSize: 18,
-        marginBottom: 20,
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#FF6F61',
+        marginBottom: 24,
     },
     carouselContainer: {
-        height: 300, // Explicitly setting height for the carousel container
-        width: '100%', // Ensure the container width is 100% of its parent
+        height: 250,
+        borderRadius: 10,
+        overflow: 'hidden',
         marginBottom: 20,
     },
     image: {
@@ -398,66 +507,90 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     label: {
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#333333',
+        marginBottom: 8,
+    },
+    dateButton: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#FF6F61',
     },
     dateText: {
-        fontSize: 16,
-        color: 'blue',
-        textDecorationLine: 'underline',
+        fontSize: 18,
+        color: '#FF6F61',
+        paddingVertical: 8,
     },
     totalPayment: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#FF6F61',
         marginBottom: 20,
     },
     modalContainer: {
-        flex: 1,
+        flexGrow: 1,
         padding: 20,
+        backgroundColor: '#FFFFFF',
     },
     modalTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
+        fontSize: 26,
+        fontWeight: '700',
+        color: '#333333',
         marginBottom: 20,
     },
+    uploadButton: {
+        padding: 10,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: '#FF6F61',
+        marginBottom: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    uploadButtonUploaded: {
+        backgroundColor: '#D3F9D8', // Light green to indicate upload success
+        borderColor: '#4CAF50', // Green color for the border
+    },
     uploadText: {
-        fontSize: 16,
-        color: 'blue',
+        fontSize: 18,
+        color: '#FF6F61',
         textDecorationLine: 'underline',
-        marginBottom: 20,
     },
     reviewsContainer: {
         marginTop: 20,
     },
     reviewsTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#333333',
         marginBottom: 10,
     },
     reviewContainer: {
-        marginBottom: 10,
+        marginBottom: 15,
         borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        paddingBottom: 10,
+        borderBottomColor: '#E0E0E0',
+        paddingBottom: 15,
     },
     reviewHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 5,
+        marginBottom: 8,
     },
     reviewerImage: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        marginRight: 10,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
     },
     reviewerName: {
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#333333',
     },
     reviewText: {
         fontSize: 16,
-        marginBottom: 5,
+        color: '#555555',
+        marginBottom: 8,
     },
 });
 

@@ -3,14 +3,16 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator }
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPaymentHistory } from '../../redux/actions/residentAction';
+
 import format from 'date-fns/format';
 const PaymentHistory = () => {
     const dispatch = useDispatch();
     const navigation = useNavigation();
     const { paymentHistory, loading, error } = useSelector((state) => state.paymentHistory);
-
+    const user = useSelector((state) => state.auth.user);
+    console.log(user.user.id)
     useEffect(() => {
-        dispatch(fetchPaymentHistory());
+        dispatch(fetchPaymentHistory(user.user.id));
     }, [dispatch]);
 
     const navigateToPaymentDetails = (paymentHistory) => {

@@ -17,48 +17,52 @@ const Complaints = () => {
     return AsyncStorage.getItem('token');
   };
 
-  const handleSubmit = async () => {
-    try {
-      const token = await getAuthToken();
-      const config = {
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-        },
-        withCredentials: true,
-    };
   
-      const formData = new FormData();
-      formData.append('name', useName ? name : ''); 
-      formData.append('complaint', complaint);
+const handleSubmit = async () => {
+  try {
+    const formData = new FormData();
+    formData.append('name', useName ? name : ''); 
+    formData.append('complaint', complaint);
 
-      const response = await axios.post(`${baseURL}/createComplaint`, formData, config);
-  
-      console.log('Complaint submitted successfully:', response.data);
-  
-      Toast.show({
-        topOffset: 60,
-        type: 'success',
-        text1: 'Complaint submitted successfully',
-      });
-      
-      setName('');
-      setComplaint('');
-      setUseName(false); 
-    } catch (error) {
-      console.error('Error submitting Complaint:', error);
-      if (error.response) {
-        console.error('Error details:', error.response.data);
+    // Adjust the URL if necessary
+    const response = await axios.post(
+      `${baseURL}/mobile/createComplaint/${user.user.id}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       }
-  
-      Toast.show({
-        topOffset: 60,
-        type: 'error',
-        text1: 'Error submitting Complaint',
-        text2: 'Please try again later',
-      });
+    );
+
+    console.log('Complaint submitted successfully:', response.data);
+
+    Toast.show({
+      topOffset: 60,
+      type: 'success',
+      text1: 'Complaint submitted successfully',
+    });
+
+    // Clear form fields
+    setName('');
+    setComplaint('');
+    setUseName(false); 
+  } catch (error) {
+    console.error('Error submitting Complaint:', error);
+    if (error.response) {
+      console.error('Error details:', error.response.data);
     }
-  };
+
+    Toast.show({
+      topOffset: 60,
+      type: 'error',
+      text1: 'Error submitting Complaint',
+      text2: 'Please try again later',
+    });
+  }
+};
+  
+  
 
   const handleCheckboxChange = () => {
     setUseName(!useName); 

@@ -73,32 +73,7 @@ const ResidentDashboard = () => {
         <View>
           <Text style={styles.header}>Payment History</Text>
           <PaymentHistory />
-          {!user.user.contract && (
-            <View style={styles.contractContainer}>
-              <View style={styles.card}>
-                <Text style={styles.messageContract}>
-                  You need to pass the contract and make your initial payment first before accessing other pages.
-                </Text>
-                <Button title="Pass Contract" onPress={openContractModal} />
-              </View>
-              <Modal
-                visible={contractModalVisible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={closeContractModal}
-              >
-                <View style={styles.modalContainer}>
-                  <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Upload Contract</Text>
-                    <Button title="Choose File" onPress={pickContractFile} />
-                    
-                    <Button title="Upload File" onPress={handleFileUpload} />
-                    <Button title="Close" onPress={closeContractModal} />
-                  </View>
-                </View>
-              </Modal>
-            </View>
-          )}
+          
         </View>
       ) : (
         <ReservationHistory />
